@@ -1,9 +1,3 @@
-
----
-
-## 2) `robot_baseball.tex`
-
-```latex
 \documentclass[11pt]{article}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{fullpage}
@@ -32,21 +26,20 @@ Each pitch is a \emph{simultaneous} move:
 \end{itemize}
 If the pitcher throws a strike and the batter swings, then with probability $p$ the batter hits a home run (payoff $4$); with probability $1-p$ the result is simply a strike.
 
-The league can tune $p \in (0,1]$. Both players play \emph{run--optimal} mixed strategies for the given $p$. Let $q(p)$ denote the probability that, under those optimal strategies, the at-bat ever reaches the count $(3,2)$. The problem is to compute
+The league can tune $p \in (0,1]$. For that $p$, both players play \emph{run--optimal} mixed strategies. Let $q(p)$ be the probability that, under those strategies, the at-bat ever reaches the full count $(3,2)$. The goal is to compute
 \[
-  q^\* \;=\; \max_{0 < p \le 1} q(p)
+  q^\* = \max_{0 < p \le 1} q(p)
 \]
 to ten decimal places.
 
 \section{State Values}
 
-Let $V(b,s)$ denote the value (expected runs to the batter) from state $(b,s)$ under optimal play.
-Terminal states are
+Let $V(b,s)$ denote the expected runs for the batter from state $(b,s)$ under optimal play. Terminal states are
 \[
   V(4,s) = 1 \quad (s=0,1,2), \qquad V(b,3) = 0 \quad (b=0,1,2,3).
 \]
 
-For a non-terminal state $(b,s)$ with $b \le 3$ and $s \le 2$, the one-step payoff matrix to the batter is
+For a live state $(b,s)$ with $b \le 3$ and $s \le 2$, the one-step payoff matrix to the batter is
 \[
 \begin{array}{c|cc}
         & \text{Wait} & \text{Swing} \\\hline
@@ -54,43 +47,50 @@ For a non-terminal state $(b,s)$ with $b \le 3$ and $s \le 2$, the one-step payo
 \text{Strike} & V(b,s+1)     & 4p + (1-p)V(b,s+1)
 \end{array}
 \]
-This is a $2 \times 2$ zero-sum game. Denote by $x(b,s)$ the batter's equilibrium probability of waiting, and by $y(b,s)$ the pitcher's equilibrium probability of throwing a ball. Because the two off-diagonal entries coincide, this game has a particularly simple mixed-strategy solution, but in practice it is easiest to evaluate it numerically using backward induction.
-
-\section{Probability of Reaching the Full Count}
-
-Define $Q(b,s)$ to be the probability that state $(3,2)$ is ever reached before termination, starting from $(b,s)$, when both players use the run--optimal strategies corresponding to the given $p$. Then
+This is a $2\times 2$ zero-sum game. Solving it for its saddle point gives the value $V(b,s)$ and the equilibrium probabilities
 \[
-  Q(3,2) = 1, \qquad Q(4,s)=0, \qquad Q(b,3)=0.
+x(b,s) = \text{batter wait prob.}, \qquad y(b,s) = \text{pitcher ball prob.}
 \]
-For other $(b,s)$, if the batter waits with probability $x = x(b,s)$ and the pitcher throws a ball with probability $y = y(b,s)$, then:
+at that state. Because $V(b+1,s)$ and $V(b,s+1)$ refer only to \emph{later} states, we can compute $V$, $x$, and $y$ for all states by backward induction over $s=2,1,0$ and $b=3,2,1,0$.
+
+\section{Full-Count Probability}
+
+Define $Q(b,s)$ to be the probability of ever reaching $(3,2)$ before termination, starting from $(b,s)$, when both players use these run--optimal strategies for the given $p$.
+
+Boundary conditions:
+\[
+  Q(3,2) = 1, \qquad Q(4,s) = 0, \qquad Q(b,3) = 0.
+\]
+
+For other $(b,s)$, let $x = x(b,s)$ and $y = y(b,s)$. Then on the next pitch:
 \begin{itemize}
-  \item with probability $yx$ we move to $(b+1,s)$;
-  \item with probability $y(1-x) + (1-y)x + (1-y)(1-x)(1-p)$ we move to $(b,s+1)$;
-  \item with probability $(1-y)(1-x)p$ we hit a home run and terminate without having reached $(3,2)$.
+  \item with probability $yx$ we go to $(b+1,s)$;
+  \item with probability $y(1-x) + (1-y)x + (1-y)(1-x)(1-p)$ we go to $(b,s+1)$;
+  \item with probability $(1-y)(1-x)p$ we hit a home run and terminate without reaching $(3,2)$.
 \end{itemize}
-Hence
+Therefore,
 \[
-  Q(b,s) \;=\; yx \, Q(b+1,s) \;+\; \bigl(y(1-x) + (1-y)x + (1-y)(1-x)(1-p)\bigr)\, Q(b, s+1).
+  Q(b,s) = yx \, Q(b+1,s) + \bigl( y(1-x) + (1-y)x + (1-y)(1-x)(1-p) \bigr) Q(b,s+1).
 \]
-This recursion is evaluated in reverse order over $b$ and $s$ once $x(\cdot,\cdot)$ and $y(\cdot,\cdot)$ are known.
+Again this is evaluated by backward induction.
 
-Finally, the desired probability for a given $p$ is
+Finally,
 \[
-  q(p) \;=\; Q(0,0).
+  q(p) = Q(0,0).
 \]
 
-\section{Maximization over \texorpdfstring{$p$}{p}}
+\section{Maximization}
 
-We evaluate $q(p)$ for $p \in (0,1]$. Numerically, $q(p)$ increases from small $p$, attains a maximum, and then decreases. The maximum occurs at
+Evaluating $q(p)$ for $p \in (0,1]$ shows that $q(p)$ is unimodal and attains its maximum at
 \[
-  p^\* \approx 0.2269732297,
+  p^\* \approx 0.2269732297.
 \]
-and at this value we obtain
+At this value,
 \[
   q^\* = q(p^\*) \approx 0.2959679934.
 \]
 
-Thus, the maximal probability that an at-bat, under optimal play by both batter and pitcher, reaches the full count $(3,2)$ is
+Thus, the maximal probability that an at-bat reaches a full count $(3,2)$ under optimal play is
 \[
   \boxed{0.2959679934}.
 \]
